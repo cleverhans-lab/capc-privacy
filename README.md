@@ -1,63 +1,9 @@
 # CaPC
 
-Confidential and Private Collaborative Machine Learning
+Minimal example of CaPC without a private inference.
 
-We develop a protocol involving a small number of parties (e.g., a few
-hospitals) who want to improve the utility of their respective models via
-collaboration, and a third party Privacy Guardian (PG). Each party first
-trains its own model on its local dataset. The PG generates a pair of secret and
-public keys for an additive homomorphic encryption scheme and sends the public
-key to all collaborating parties. Once a party identifies a query they would
-like a label for, they initiate the collaboration protocol.
-
-## Docker for CaPC
-
-We packed the CaPC code to a single docker container. You should be able to download the container from the docker hub: 
-```docker pull adziedzi/capc:version1```
-
-Then run the container: 
-```docker run -it adziedzi/capc:version1```
-
-Next, skip directly to Method 1 (Tmux and Terminal) below to run the CaPC demo.
-
-## he-transformer 
-The code is based on the he-transformer library.
-
-Install he_transformer from here: https://github.com/IntelAI/he-transformer. We
-use the ubuntu 18.04 version.
-
-We packed the he-transformer to a single docker container. You should be able to download he-transformer from docker hub with version3: 
-```docker pull adziedzi/he-transformer:version3```
-
-Then run the container: 
-```docker run -it adziedzi/he-transformer:version3```
-
-Go to the container. Run: 
-```source ~./profile```
-
-Next, we check if he-transformer was installed correctly.
-
-Run tmux: 
-```tmux new -s he-transformer```
-
-Create two panes `Ctrl+b` and `Shift+"` and then execute [a simple example from he-transformer library](https://github.com/IntelAI/he-transformer/tree/master/examples#client-server-model).
-
-For a simple demonstration of a server-client approach, run the server in the first pane:
-```
-python $HE_TRANSFORMER/examples/ax.py \
-  --backend=HE_SEAL \
-  --enable_client=yes \
-  --port 35000
-```
-
-and client in the other pane:
-```
-python $HE_TRANSFORMER/examples/pyclient.py --port 35000
-```
-
-If the above works, then clone our repository from: https://github.com/cleverhans-lab/capc-demo and follow these instructions below.
-
-`~/code$ git clone https://github.com/cleverhans-lab/capc-demo.git`
+Run server first: `server.py`
+Then client: `client.py`
 
 ## CaPC Demo
 Install the crypto packages.
@@ -103,25 +49,6 @@ You can see the pane numbers by doing Ctrl+b and pressing q.
 To switch between panes, use Ctrl+b and then the relevant arrow key
 corresponding to the direction of the pane to switch to. For example to switch
 from pane 1 to pane 2, use Ctrl+b followed by the right arrow key. To scroll up through the output of a pane, use Ctrl+b followed by the left square bracket. To type in the terminal again, press 'q'. 
-
-
-To activate the python environment and the HE transformer library, in each of the panes, go to the directory where the experiment files are
-located: `cd ~/code/capc-demo` and run `source activate_env.sh`. 
-
-This does:
-```
-cd ~/code/he-transformer
-export HE_TRANSFORMER=$(pwd)
-source ${HE_TRANSFORMER}/build/external/venv-tf-py3/bin/activate
-```
-
-Special case if you are on our nic2 machine:
-
-```
-cd /home/dockuser/code/he-transformer
-export HE_TRANSFORMER=$(pwd)
-source ${HE_TRANSFORMER}/build/external/venv-tf-py3/bin/activate
-```
 
 Do `Ctrl+b q` to show number of panes. In pane 2, run `python init_log_files.py` to initialize the log files.
 
