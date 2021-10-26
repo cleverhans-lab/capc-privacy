@@ -111,7 +111,7 @@ def argument_parser():
         help="Number of possible classes in the classification task.",
     )
     parser.add_argument('--checkpoint_dir', type=str,
-                        default=f'/home/{user}/code/capc-demo/utils/models',
+                        default=f'/home/{user}/code/capc-privacy/utils/models',
                         help='dir with all checkpoints')
 
     # parser.add_argument('--model_file', type=str, required=True,

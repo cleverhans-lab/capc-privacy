@@ -1,8 +1,10 @@
 import numpy as np
 import os
-import pyhe_client
 import subprocess
 import time
+
+import zmq
+from zmq_net.handle_numpy_array import recv_array, send_array
 
 from consts import out_client_name, out_final_name, inference_times_name, \
     label_final_name
@@ -26,14 +28,15 @@ def run_client(FLAGS, data):
     if FLAGS.batch_size > 1:
         raise ValueError('batch size > 1 not currently supported.')
     inference_start = time.time()
-    print("Querying party: run private inference (Step 1a)")
-    client = pyhe_client.HESealClient(
-        FLAGS.hostname,
-        port,
-        FLAGS.batch_size,
-        {"import/input": (FLAGS.encrypt_data_str, data)},
-    )
-    r_rstar = np.array(client.get_results())
+    print("Querying party: run inference (Step 1a)")
+
+    context = zmq.Context()
+    print("Connecting to server...")
+    socket = context.socket(zmq.REQ)
+    socket.connect(f"tcp://{FLAGS.hostname}:%s" % port)
+
+    send_array(socket, query)
+    r_rstar = recv_array(socket)
 
     inference_end = time.time()
     logger.info(
@@ -58,7 +61,8 @@ def run_client(FLAGS, data):
     while not os.path.exists(
             f"{out_final_name}{port}.txt"):  # final_name = output
         process = subprocess.Popen(  # Step 1b of the protocol
-            ['./mpc/bin/argmax', '2', '12345', # TODO: add ip address of the server
+            ['./mpc/bin/argmax', '2', '12345',
+             # TODO: add ip address of the server
              f'{out_client_name}{port}privacy.txt'])
         process.wait()
     msg = f'Client (QP) with port {port} finished secure 2PC.'

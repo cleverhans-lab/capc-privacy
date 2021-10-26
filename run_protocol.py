@@ -252,8 +252,6 @@ def run(FLAGS):
             # Command to start server with the relevant parameters.
             cmd_string = " ".join(
                 [
-                    f'OMP_NUM_THREADS={num_threads}',
-                    f'NGRAPH_HE_LOG_LEVEL={log_level}',
                     'python -W ignore', 'server.py',
                     '--backend', backend,
                     '--n_parties', f'{n_parties}',
@@ -285,8 +283,6 @@ def run(FLAGS):
             cmd_string = " ".join(
                 [
                     # Command to start client server with the relevant parameters.
-                    f'OMP_NUM_THREADS={num_threads}',
-                    f'NGRAPH_HE_LOG_LEVEL={log_level}',
                     'python -W ignore client.py',
                     '--batch_size', f'{batch_size}',
                     '--encrypt_data_str', 'encrypt',

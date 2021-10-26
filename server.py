@@ -1,10 +1,12 @@
 # This import below is needed to run TensorFlow on top of the he-transformer.
-import ngraph_bridge
-import numpy as np
 import subprocess
-import tensorflow as tf
 import time
+import zmq
+from zmq_net.handle_numpy_array import recv_array, send_array
+import numpy as np
+import tensorflow as tf
 
+import get_r_star
 from consts import (
     out_server_name,
     out_final_name,
@@ -16,15 +18,10 @@ from mnist_util import (
 )
 from utils import client_data
 from utils import flags
+from utils.log_utils import create_logger
 from utils.main_utils import array_str
 from utils.main_utils import round_array
 from utils.time_utils import log_timing
-from utils.log_utils import create_logger
-import get_r_star
-
-# The print below is to retain the ngraph_bridge import so that it is not
-# discarded when we optimize the imports.
-print('tf version for ngraph_bridge: ', ngraph_bridge.TF_VERSION)
 
 
 def get_rstar_server(max_logit, batch_size, num_classes, exp):
@@ -48,7 +45,7 @@ def max_pool(y_output, FLAGS):
     return y_max
 
 
-def run_server(FLAGS, query):
+def run_server(FLAGS, query=None):
     logger = create_logger(save_path='logs', file_type='server')
     prefix_msg = f"Server (Answering Party AP) with port {FLAGS.port}: "
     logger.info(f"{prefix_msg}started Step 1a of the CaPC protocol).")
@@ -62,10 +59,11 @@ def run_server(FLAGS, query):
     x_input = tf.compat.v1.get_default_graph().get_tensor_by_name(
         # FLAGS.input_node
         # "import/Placeholder:0"
-        "import/input:0"
+        "input:0"
     )
     y_output = tf.compat.v1.get_default_graph().get_tensor_by_name(
-        "import/output/BiasAdd:0"
+        # "import/output/BiasAdd:0"
+        "output/BiasAdd:0"
         # FLAGS.output_node
         # "import/dense/BiasAdd:0"
     )
@@ -79,10 +77,16 @@ def run_server(FLAGS, query):
         seed=FLAGS.seed,
     ).flatten()
     print(f"rstar: {r_star}")
+    tf.compat.v1.disable_eager_execution()
     r_rstar = tf.subtract(
         # r - r* (subtract the random vector r* from logits) (to be used in Step 1b)
         y_output,
         tf.convert_to_tensor(r_star, dtype=tf.float32))
+
+    context = zmq.Context()
+    socket = context.socket(zmq.REP)
+    socket.bind("tcp://*:%s" % FLAGS.port)
+    query = recv_array(socket)
 
     # Create configuration to encrypt input
     config = server_config_from_flags(FLAGS, x_input.name)
@@ -94,7 +98,8 @@ def run_server(FLAGS, query):
         inference_start = time.time()
         print("Answering party: run private inference (Step 1a)")
         # TODO: Could we move the r_star to the feed_dict.
-        y_hat = sess.run(r_rstar, feed_dict={x_input: query})
+        r_rstar = sess.run(r_rstar, feed_dict={x_input: query})
+        send_array(socket, r_rstar)
         inference_end = time.time()
         logger.info(
             f"{prefix_msg}Inference time: {inference_end - inference_start}s")
