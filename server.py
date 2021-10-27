@@ -83,6 +83,7 @@ def run_server(FLAGS, query=None):
         y_output,
         tf.convert_to_tensor(r_star, dtype=tf.float32))
 
+    # Accept a query from a client.
     context = zmq.Context()
     socket = context.socket(zmq.REP)
     socket.bind("tcp://*:%s" % FLAGS.port)

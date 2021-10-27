@@ -1,10 +1,8 @@
-import numpy as np
+import os
 import os
 import subprocess
 import time
-
 import zmq
-from zmq_net.handle_numpy_array import recv_array, send_array
 
 from consts import out_client_name, out_final_name, inference_times_name, \
     label_final_name
@@ -13,6 +11,7 @@ from utils import flags
 from utils.log_utils import create_logger
 from utils.main_utils import round_array
 from utils.time_utils import log_timing
+from zmq_net.handle_numpy_array import recv_array, send_array
 
 
 def run_client(FLAGS, data):
@@ -30,12 +29,13 @@ def run_client(FLAGS, data):
     inference_start = time.time()
     print("Querying party: run inference (Step 1a)")
 
+    # Connect to the server.
     context = zmq.Context()
     print("Connecting to server...")
     socket = context.socket(zmq.REQ)
     socket.connect(f"tcp://{FLAGS.hostname}:%s" % port)
 
-    send_array(socket, query)
+    send_array(socket, data)
     r_rstar = recv_array(socket)
 
     inference_end = time.time()
