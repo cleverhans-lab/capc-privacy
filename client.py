@@ -1,17 +1,20 @@
 import os
-import os
 import subprocess
 import time
+import torch
 import zmq
 
-from consts import out_client_name, out_final_name, inference_times_name, \
-    label_final_name
-from utils import client_data
-from utils import flags
+import parameters
+from consts import inference_times_name
+from consts import label_final_name
+from consts import out_client_name
+from consts import out_final_name
+from data.get_data import get_data
 from utils.log_utils import create_logger
 from utils.main_utils import round_array
 from utils.time_utils import log_timing
-from zmq_net.handle_numpy_array import recv_array, send_array
+from zmq_net.handle_numpy_array import recv_array
+from zmq_net.handle_numpy_array import send_array
 
 
 def run_client(FLAGS, data):
@@ -35,6 +38,7 @@ def run_client(FLAGS, data):
     socket = context.socket(zmq.REQ)
     socket.connect(f"tcp://{FLAGS.hostname}:%s" % port)
 
+    data = data.cpu().numpy()
     send_array(socket, data)
     r_rstar = recv_array(socket)
 
@@ -79,18 +83,24 @@ def print_label():
     logger.info(f"Predicted label: {label}")
 
 
-if __name__ == "__main__":
-    FLAGS, unparsed = flags.argument_parser().parse_known_args()
-    if FLAGS.data_partition not in ['train', 'test']:
-        raise ValueError(
-            f"Detected data_partition={FLAGS.data_partition} not valid.")
+def main():
+    args = parameters.get_args()
 
-    (x_train, y_train, x_test, y_test) = client_data.load_mnist_data(
-        start_batch=FLAGS.indext, batch_size=1)
-    query = x_test
+    train_loader, test_loader, train_dataset, test_dataset = get_data(args=args)
+
+    data_id = 0
+    query = test_dataset[data_id][0]
+    query = torch.unsqueeze(query, dim=0)
+    correct_label = test_dataset[data_id][1]
+    logger = create_logger(save_path='logs', file_type='client')
+    logger.info('correct_label: ', correct_label)
 
     start_time = time.time()
-    r_rstar = run_client(FLAGS=FLAGS, data=query[None, ...].flatten("C"))
+    run_client(FLAGS=args, data=query)
     end_time = time.time()
     print(f'step 1a runtime: {end_time - start_time}s')
-    log_timing('Client (QP) finished', log_file=FLAGS.log_timing_file)
+    log_timing('Client (QP) finished', log_file=args.log_timing_file)
+
+
+if __name__ == "__main__":
+    main()

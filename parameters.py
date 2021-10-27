@@ -1,7 +1,9 @@
-import argparse
-from utils.time_utils import get_timestamp
-import os
 import getpass
+
+import argparse
+import torch
+
+from utils.time_utils import get_timestamp
 
 DEFAULT_PORT = 8000
 
@@ -22,6 +24,10 @@ def argument_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument("--seed", type=int, default=4567, help="random seed")
     parser.add_argument("--batch_size", type=int, default=1, help="Batch size")
+    parser.add_argument("--num_workers", type=int, default=1,
+                        help='Number of workers to fetch the data.')
+    parser.add_argument('--is_cuda', type=str2bool, default=True,
+                        help='Is CUDA training enabled?')
     parser.add_argument('--final_call', type=int, default=0,
                         help='always 0 unless final call to client.')
     parser.add_argument('--encrypt_data_str', type=str, default="encrypt")
@@ -34,8 +40,8 @@ def argument_parser():
         type=str,
         # default="../../config/he_seal_ckks_config_N13_L4_gc_50.json",
         default='config/10.json',
-        help=
-        "Filename containing json description of encryption parameters, or json description itself",
+        help="Filename containing json description of encryption parameters, "
+             "or json description itself",
     )
     parser.add_argument(
         "--enable_client",
@@ -60,6 +66,7 @@ def argument_parser():
         help="Mask garbled circuits outputs",
     )
     parser.add_argument('--data_partition', type=str, default='test',
+                        choices=['train', 'test'],
                         help='test or train partition.')
     parser.add_argument(
         "--num_gc_threads",
@@ -110,22 +117,13 @@ def argument_parser():
         default=10,
         help="Number of possible classes in the classification task.",
     )
-    parser.add_argument('--checkpoint_dir', type=str,
-                        default=f'/home/{user}/code/capc-privacy/utils/models',
-                        help='dir with all checkpoints')
-
-    # parser.add_argument('--model_file', type=str, required=True,
-    #                     help="Filename of saved protobuf model")
     parser.add_argument(
-        "--model_file",
-        type=str,
-        default=os.path.join("/home/dockuser/models",
-                             str(37000) + ".pb"),
-        # default="../../models/cryptonets.pb",
-        help="Filename of saved protobuf model")
-    # parser.add_argument('--model', type=str, required=True
-    # )
-    parser.add_argument('--n_parties', type=int, default=1)  # required=True)
+        '--checkpoint_dir', type=str,
+        default=f'./models',
+        # default=f'./architecture/',
+        help='Path to the directory with all checkpoints.')
+
+    parser.add_argument('--n_parties', type=int, default=1)  # , required=True)
     parser.add_argument(
         '--r_star',
         nargs='+',
@@ -156,3 +154,16 @@ def argument_parser():
                         help='name of the global log timing file',
                         default=f'logs/log-timing-{get_timestamp()}.log')
     return parser
+
+
+def get_args():
+    args, unparsed = argument_parser().parse_known_args()
+
+    torch.manual_seed(args.seed)
+
+    args.is_cuda = args.is_cuda and torch.cuda.is_available()
+
+    device = torch.device("cuda" if args.is_cuda else "cpu")
+    args.device = device
+
+    return args
