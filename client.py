@@ -93,7 +93,7 @@ def main():
     query = torch.unsqueeze(query, dim=0)
     correct_label = test_dataset[data_id][1]
     logger = create_logger(save_path='logs', file_type='client')
-    logger.info('correct_label: ', correct_label)
+    logger.info(f'correct_label: {correct_label}')
 
     start_time = time.time()
     run_client(FLAGS=args, data=query)

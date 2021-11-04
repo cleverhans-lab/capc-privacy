@@ -30,6 +30,7 @@ def run_server(args):
     logger = create_logger(save_path='logs', file_type='server')
     prefix_msg = f"Server (Answering Party AP) with port {args.port}: "
     logger.info(f"{prefix_msg}started Step 1a of the CaPC protocol).")
+    # logger.info(f"checkpoint dir: {args.checkpoint_dir}")
 
     model = get_model(dataset=args.dataset_name,
                       checkpoint_dir=args.checkpoint_dir,

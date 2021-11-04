@@ -29,7 +29,7 @@ import subprocess
 import client
 
 
-def get_FLAGS():
+def get_args():
     user = getpass.getuser()
     """Initial setup of parameters to be used."""
     parser = argparse.ArgumentParser('')
@@ -125,7 +125,7 @@ def get_FLAGS():
                         default=1,
                         help='total len(queries)')
     parser.add_argument('--checkpoint_dir', type=str,
-                        default=f'/home/{user}/code/capc-demo/utils/models',
+                        default=f'/home/{user}/code/capc-privacy/models',
                         help='dir with all checkpoints')
     parser.add_argument('--cpu', default=False, action='store_true',
                         help='set to use cpu and no encryption.')
@@ -136,11 +136,11 @@ def get_FLAGS():
     #                     default='$HE_TRANSFORMER/configs/he_seal_ckks_config_N13_L5_gc.json')
     parser.add_argument('--encryption_params',
                         default='config/10.json')
-    FLAGS, unparsed = parser.parse_known_args()
+    args, unparsed = parser.parse_known_args()
     if unparsed:
         print("Unparsed flags:", unparsed)
         exit(1)
-    return FLAGS
+    return args
 
 
 def clean_old_files():
@@ -200,9 +200,9 @@ def get_models(model_dir, n_parties, ignore_parties):
     return model_dir, model_files
 
 
-def run(FLAGS):
+def run(args):
     """Main pipeline to run the experiment based on the given parameters."""
-    log_timing_file = FLAGS.log_timing_file
+    log_timing_file = args.log_timing_file
     log_timing('main: start capc', log_file=log_timing_file)
 
     processes = []
@@ -211,28 +211,28 @@ def run(FLAGS):
         for p in processes:
             p.kill()
 
-    if not FLAGS.debug:
+    if not args.debug:
         atexit.register(kill_processes)
 
-    n_parties = FLAGS.n_parties
-    n_queries = FLAGS.n_queries
-    batch_size = FLAGS.batch_size
-    num_classes = FLAGS.num_classes
-    rstar_exp = FLAGS.rstar_exp
-    log_level = FLAGS.log_level
-    round_exp = FLAGS.round_exp
-    num_threads = FLAGS.num_threads
-    input_node = FLAGS.input_node
-    output_node = FLAGS.output_node
-    start_port = FLAGS.start_port
-    index = FLAGS.start_batch
+    n_parties = args.n_parties
+    n_queries = args.n_queries
+    batch_size = args.batch_size
+    num_classes = args.num_classes
+    rstar_exp = args.rstar_exp
+    log_level = args.log_level
+    round_exp = args.round_exp
+    num_threads = args.num_threads
+    input_node = args.input_node
+    output_node = args.output_node
+    start_port = args.start_port
+    index = args.start_batch
 
     # if FLAGS.cpu then use cpu without the encryption.
-    backend = 'HE_SEAL' if not FLAGS.cpu else 'CPU'
+    backend = 'HE_SEAL' if not args.cpu else 'CPU'
 
     models_loc, model_files = get_models(
-        FLAGS.checkpoint_dir, n_parties=n_parties,
-        ignore_parties=FLAGS.ignore_parties)
+        args.checkpoint_dir, n_parties=n_parties,
+        ignore_parties=args.ignore_parties)
 
     for port in range(start_port, start_port + n_queries * n_parties):
         delete_files(port=port)
@@ -256,16 +256,16 @@ def run(FLAGS):
                     '--backend', backend,
                     '--n_parties', f'{n_parties}',
                     '--model_file', new_model_file,
-                    '--dataset_name', FLAGS.dataset_name,
+                    '--dataset_name', args.dataset_name,
                     '--indext', str(index),
-                    '--encryption_parameters', FLAGS.encryption_params,
+                    '--encryption_parameters', args.encryption_params,
                     '--enable_client', 'true',
                     '--enable_gc', 'true',
                     '--mask_gc_inputs', 'true',
                     '--mask_gc_outputs', 'true',
                     '--from_pytorch', '1',
-                    '--dataset_name', FLAGS.dataset_name,
-                    '--dataset_path', FLAGS.dataset_path,
+                    '--dataset_name', args.dataset_name,
+                    '--dataset_path', args.dataset_path,
                     '--num_gc_threads', f'{num_threads}',
                     '--input_node', f'{input_node}',
                     '--output_node', f'{output_node}',
@@ -275,7 +275,7 @@ def run(FLAGS):
                     '--round_exp', f'{round_exp}',
                     '--log_timing_file', log_timing_file,
                     '--port', f'{port}',
-                    '--checkpoint_dir', FLAGS.checkpoint_dir,
+                    '--checkpoint_dir', args.checkpoint_dir,
                 ])
             server_process = subprocess.Popen(cmd_string, shell=True)
             print("Start the client (the querying party: QP).")
@@ -291,9 +291,9 @@ def run(FLAGS):
                     '--round_exp', f'{round_exp}',
                     '--from_pytorch', '1',
                     '--minibatch_id', f'{query_num}',
-                    '--dataset_path', f'{FLAGS.dataset_path}',
+                    '--dataset_path', f'{args.dataset_path}',
                     '--port', f'{port}',
-                    '--dataset_name', FLAGS.dataset_name,
+                    '--dataset_name', args.dataset_name,
                     '--data_partition', 'test',
                     '--log_timing_file', log_timing_file,
                 ])
@@ -307,9 +307,10 @@ def run(FLAGS):
         cmd_string = " ".join(
             ['python -W ignore', 'pg.py',
              '--start_port', f'{start_port + int(query_num * n_parties)}',
-             '--end_port', f'{start_port + int(query_num * n_parties) + n_parties}',
+             '--end_port',
+             f'{start_port + int(query_num * n_parties) + n_parties}',
              '--log_timing_file', log_timing_file,
-             '--dp_noise_scale', str(FLAGS.dp_noise_scale),
+             '--dp_noise_scale', str(args.dp_noise_scale),
              ])
         print(f"start privacy guardian: {cmd_string}")
         pg_process = subprocess.Popen(cmd_string, shell=True)
@@ -319,12 +320,12 @@ def run(FLAGS):
 
 
 if __name__ == "__main__":
-    FLAGS = get_FLAGS()
-    np.random.seed(FLAGS.seed)
+    args = get_args()
+    np.random.seed(args.seed)
     clean_old_files()
-    set_data_labels(FLAGS=FLAGS)
-    run(FLAGS=FLAGS)
+    set_data_labels(FLAGS=args)
+    run(args=args)
     client.print_label()
     (x_train, y_train, x_test, y_test) = client_data.load_mnist_data(
-        start_batch=FLAGS.start_batch, batch_size=1)
+        start_batch=args.start_batch, batch_size=1)
     print('The correct label should be: ', np.argmax(y_test))
