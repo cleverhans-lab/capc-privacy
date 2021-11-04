@@ -1,0 +1,1 @@
+PYTHONPATH=../../ python mnist_train.py

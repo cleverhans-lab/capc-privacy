@@ -15,9 +15,7 @@ from utils.client_data import get_data
 from utils.time_utils import get_timestamp, log_timing
 
 warnings.filterwarnings('ignore')
-import tensorflow as tf
 
-tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 import argparse
 import os
 import numpy as np
@@ -62,6 +60,8 @@ def get_FLAGS():
         default=36.0,
         help='The maximum value of a logit.',
     )
+    parser.add_argument('--dp_noise_scale', type=float, default=0.1,
+                        help='The scale of the Gaussian noise for DP privacy.')
     parser.add_argument(
         "--user",
         type=str,
@@ -306,8 +306,10 @@ def run(FLAGS):
         # Command to run Privacy Guardian (Steps 2 & 3).
         cmd_string = " ".join(
             ['python -W ignore', 'pg.py',
-             f'{start_port + int(query_num * n_parties)}',
-             f'{start_port + int(query_num * n_parties) + n_parties}'
+             '--start_port', f'{start_port + int(query_num * n_parties)}',
+             '--end_port', f'{start_port + int(query_num * n_parties) + n_parties}',
+             '--log_timing_file', log_timing_file,
+             '--dp_noise_scale', str(FLAGS.dp_noise_scale),
              ])
         print(f"start privacy guardian: {cmd_string}")
         pg_process = subprocess.Popen(cmd_string, shell=True)
