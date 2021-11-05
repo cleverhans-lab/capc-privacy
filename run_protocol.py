@@ -10,8 +10,8 @@ SETUP: create a tmux session with 3 panes, each in /home/dockuser/code/demo/capc
 
 import warnings
 
-from utils import client_data
-from utils.time_utils import get_timestamp, log_timing
+from utils.time_utils import get_timestamp
+from utils.time_utils import log_timing
 
 warnings.filterwarnings('ignore')
 
