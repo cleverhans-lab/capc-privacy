@@ -88,7 +88,7 @@ def main():
 
     train_loader, test_loader, train_dataset, test_dataset = get_data(args=args)
 
-    data_id = 0
+    data_id = args.indext # 0
     query = test_dataset[data_id][0]
     query = torch.unsqueeze(query, dim=0)
     correct_label = test_dataset[data_id][1]
