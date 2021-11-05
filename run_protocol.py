@@ -125,7 +125,7 @@ def get_args():
                         default=1,
                         help='total len(queries)')
     parser.add_argument('--checkpoint_dir', type=str,
-                        default=f'/home/{user}/code/capc-privacy/models',
+                        default=f'./models',
                         help='dir with all checkpoints')
     parser.add_argument('--cpu', default=False, action='store_true',
                         help='set to use cpu and no encryption.')
