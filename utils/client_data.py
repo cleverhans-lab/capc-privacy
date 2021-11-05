@@ -1,29 +1,8 @@
-# from mnist.example import x_test as mnist_x_test
-# from mnist.example import y_test as mnist_y_test
-
-from mnist_util import load_mnist_data
 import torch
 import torchvision.datasets as tvds
 import numpy as np
 import os
 import torchvision.transforms as transforms
-
-
-def get_data(start_batch, batch_size):
-    """Get data from mnist and return processed data"""
-    (x_train, y_train, x_test, y_test) = load_mnist_data(
-        start_batch, batch_size)
-
-    is_test = False
-    if is_test:
-        data = x_test
-        y_test = [y_test]
-    else:
-        data = x_test.flatten("C")
-        # print('data (x_test): ', data)
-        # print('y_test: ', y_test)
-    data = data.reshape((-1, 28, 28, 1))
-    return data, y_test
 
 
 def get_queries(dataset, subset_indices, batch_size):

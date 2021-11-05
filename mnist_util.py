@@ -33,6 +33,22 @@ from utils.time_utils import get_timestamp
 DEFAULT_PORT = 35000
 import pprint
 
+def get_data(start_batch, batch_size):
+    """Get data from mnist and return processed data"""
+    (x_train, y_train, x_test, y_test) = load_mnist_data(
+        start_batch, batch_size)
+
+    is_test = False
+    if is_test:
+        data = x_test
+        y_test = [y_test]
+    else:
+        data = x_test.flatten("C")
+        # print('data (x_test): ', data)
+        # print('y_test: ', y_test)
+    data = data.reshape((-1, 28, 28, 1))
+    return data, y_test
+
 
 def print_nodes(graph_def=None):
     """Prints the node names of a graph_def.
