@@ -17,8 +17,8 @@ from zmq_net.handle_numpy_array import recv_array
 from zmq_net.handle_numpy_array import send_array
 
 
-def run_client(FLAGS, data):
-    port = FLAGS.port
+def run_client(args, data):
+    port = args.port
     logger = create_logger(save_path='logs', file_type='client')
     logger.info(
         f"Client with port {port} execution: run private inference "
@@ -27,7 +27,7 @@ def run_client(FLAGS, data):
         logger.warn(
             "WARNING: list ports were passed. Only one should be passed.")
         port = port[0]  # only one port should be passed
-    if FLAGS.batch_size > 1:
+    if args.batch_size > 1:
         raise ValueError('batch size > 1 not currently supported.')
     inference_start = time.time()
     print("Querying party: run inference (Step 1a)")
@@ -36,7 +36,7 @@ def run_client(FLAGS, data):
     context = zmq.Context()
     print("Connecting to server...")
     socket = context.socket(zmq.REQ)
-    socket.connect(f"tcp://{FLAGS.hostname}:%s" % port)
+    socket.connect(f"tcp://{args.hostname}:%s" % port)
 
     data = data.cpu().numpy()
     send_array(socket, data)
@@ -49,7 +49,7 @@ def run_client(FLAGS, data):
     with open(inference_times_name, 'a') as outfile:
         outfile.write(str(inference_end - inference_start))
         outfile.write('\n')
-    r_rstar = round_array(x=r_rstar, exp=FLAGS.round_exp)
+    r_rstar = round_array(x=r_rstar, exp=args.round_exp)
     # logger.info(f"rounded r_rstar (r-r*): {array_str(r_rstar)}")
     with open(f'{out_client_name}{port}privacy.txt',
               'w') as outfile:  # r-r* vector saved (to be used in Step 1b)
@@ -60,7 +60,7 @@ def run_client(FLAGS, data):
     msg = f"Client (QP) with port {port} starting secure 2PC for argmax " \
           f"(Step 1c) with its Answering Party (AP)."
     log_timing(stage='client:' + msg,
-               log_file=FLAGS.log_timing_file)
+               log_file=args.log_timing_file)
     logger.info(msg)
     while not os.path.exists(
             f"{out_final_name}{port}.txt"):  # final_name = output
@@ -70,7 +70,7 @@ def run_client(FLAGS, data):
              f'{out_client_name}{port}privacy.txt'])
         process.wait()
     msg = f'Client (QP) with port {port} finished secure 2PC.'
-    log_timing(stage=msg, log_file=FLAGS.log_timing_file)
+    log_timing(stage=msg, log_file=args.log_timing_file)
     logger.info(msg)
     return r_rstar
 
@@ -96,7 +96,7 @@ def main():
     logger.info(f'correct_label: {correct_label}')
 
     start_time = time.time()
-    run_client(FLAGS=args, data=query)
+    run_client(args=args, data=query)
     end_time = time.time()
     print(f'step 1a runtime: {end_time - start_time}s')
     log_timing('Client (QP) finished', log_file=args.log_timing_file)

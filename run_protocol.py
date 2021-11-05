@@ -11,7 +11,6 @@ SETUP: create a tmux session with 3 panes, each in /home/dockuser/code/demo/capc
 import warnings
 
 from utils import client_data
-from utils.client_data import get_data
 from utils.time_utils import get_timestamp, log_timing
 
 warnings.filterwarnings('ignore')
@@ -181,14 +180,6 @@ def delete_files(port):
             os.remove(f)
 
 
-def set_data_labels(FLAGS):
-    """Gets MNIST data and labels, saving it in the local folder"""
-    data, labels = get_data(start_batch=FLAGS.start_batch,
-                            batch_size=FLAGS.batch_size)
-    np.save(consts.input_data, data)
-    np.save(consts.input_labels, labels)
-
-
 def get_models(model_dir, n_parties, ignore_parties):
     """Gets model files from model_dir."""
     model_files = [f for f in os.listdir(model_dir) if
@@ -323,9 +314,5 @@ if __name__ == "__main__":
     args = get_args()
     np.random.seed(args.seed)
     clean_old_files()
-    set_data_labels(FLAGS=args)
     run(args=args)
     client.print_label()
-    (x_train, y_train, x_test, y_test) = client_data.load_mnist_data(
-        start_batch=args.start_batch, batch_size=1)
-    print('The correct label should be: ', np.argmax(y_test))
