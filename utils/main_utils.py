@@ -1,7 +1,5 @@
 import numpy as np
 
-from mnist_util import load_mnist_data
-
 
 def round_array(x, exp):
     """
@@ -58,25 +56,6 @@ def array_str(x, out=""):
         out += "]"
 
     return out
-
-
-def get_data(name, party_id, n_parties, FLAGS):
-    if name == 'mnist':
-        (x_train, y_train, x_test, y_test) = load_mnist_data(
-            FLAGS.start_batch, FLAGS.batch_size)
-        leftover = len(x_train) % (n_parties + 1)
-        x_train, y_train = x_train[:-leftover], y_train[:-leftover]
-        leftover = len(x_test) % (n_parties + 1)
-        x_test, y_Test = x_test[:-leftover], y_test[:-leftover]
-        train_indices = np.arange(len(x_train))
-        # TODO: party_t* variables below are not used.
-        party_train_indices = np.split(train_indices, n_parties)[party_id]
-        test_indices = np.arange(len(x_test))
-        party_test_indices = np.split(test_indices, n_parties)[party_id]
-        return (x_train[train_indices], y_train[train_indices]), (
-            x_test[test_indices], y_test[test_indices])
-    else:
-        raise ValueError(f"Invalid dataset name: {name}.")
 
 
 if __name__ == "__main__":
