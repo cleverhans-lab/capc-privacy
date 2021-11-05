@@ -163,7 +163,8 @@ def get_args():
 
     args.is_cuda = args.is_cuda and torch.cuda.is_available()
 
-    device = torch.device("cuda" if args.is_cuda else "cpu")
+    device = torch.device(
+        "cuda" if args.is_cuda and torch.cuda.is_available() else "cpu")
     args.device = device
 
     return args
